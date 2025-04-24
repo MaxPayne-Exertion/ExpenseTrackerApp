@@ -23,19 +23,19 @@ void MainFrame::CreateControls()
 
 	descText = new wxStaticText(panel, wxID_ANY, "Description", wxPoint(20, 60), wxSize(100,-1));
 	
-	descInput = new wxTextCtrl(panel, wxID_ANY, "", wxPoint(130, 60), wxSize(200, -1));
+	descInput = new wxTextCtrl(panel, wxID_ANY, "", wxPoint(130, 60), wxSize(200, -1), wxTE_PROCESS_ENTER);
 
 	catText = new wxStaticText(panel, wxID_ANY, "Category", wxPoint(340, 60), wxSize(100, -1));
 	
-	catInput = new wxTextCtrl(panel, wxID_ANY, "", wxPoint(450, 60), wxSize(200, -1));
+	catInput = new wxTextCtrl(panel, wxID_ANY, "", wxPoint(450, 60), wxSize(200, -1), wxTE_PROCESS_ENTER);
 
 	amountText = new wxStaticText(panel, wxID_ANY, "Amount", wxPoint(20, 100), wxSize(100, -1));
 	
-	amountInput = new wxTextCtrl(panel, wxID_ANY, "", wxPoint(130, 100), wxSize(200, -1));
+	amountInput = new wxTextCtrl(panel, wxID_ANY, "", wxPoint(130, 100), wxSize(200, -1), wxTE_PROCESS_ENTER);
 
 	dateText = new wxStaticText(panel, wxID_ANY, "Date", wxPoint(340, 100), wxSize(100, -1));
 	
-	dateInput = new wxTextCtrl(panel, wxID_ANY, "", wxPoint(450, 100), wxSize(200, -1));
+	dateInput = new wxTextCtrl(panel, wxID_ANY, "", wxPoint(450, 100), wxSize(200, -1), wxTE_PROCESS_ENTER);
 
 	addButton = new wxButton(panel, wxID_ANY, "Add", wxPoint(680, 75), wxSize(100, 35));
 
@@ -55,16 +55,21 @@ void MainFrame::BindEvents()
 	//Binding event handlers to controls
 	addButton->Bind(wxEVT_BUTTON, &MainFrame::OnAddButtonClicked, this);
 	clearButton->Bind(wxEVT_BUTTON, &MainFrame::OnClearButtonClicked, this);
+	descInput->Bind(wxEVT_TEXT_ENTER, &MainFrame::OnInputEnter, this);
+	catInput->Bind(wxEVT_TEXT_ENTER, &MainFrame::OnInputEnter, this);
+	amountInput->Bind(wxEVT_TEXT_ENTER, &MainFrame::OnInputEnter, this);
+	dateInput->Bind(wxEVT_TEXT_ENTER, &MainFrame::OnInputEnter, this);
+	listCtrl->Bind(wxEVT_KEY_DOWN, & MainFrame::OnKeyDown, this);
 	this->Bind(wxEVT_CLOSE_WINDOW, &MainFrame::OnWindowClosed, this);
 }
 
-void MainFrame::OnAddButtonClicked(wxCommandEvent& evt)
+void MainFrame::AddExpenseFromInput()
 {
 	wxString desc = descInput->GetValue();
 	wxString cat = catInput->GetValue();
 	wxString amount = amountInput->GetValue();
-	wxString date= dateInput->GetValue();
-	
+	wxString date = dateInput->GetValue();
+
 	//Error handling for when all of the fields are not filled
 	if (desc.IsEmpty() || cat.IsEmpty() || amount.IsEmpty() || date.IsEmpty()) {
 		wxMessageBox("Please fill in all the fields!");
@@ -83,6 +88,40 @@ void MainFrame::OnAddButtonClicked(wxCommandEvent& evt)
 	catInput->Clear();
 	amountInput->Clear();
 	dateInput->Clear();
+}
+
+//Deleting selected expense detail when delete key is pressed
+void MainFrame::OnKeyDown(wxKeyEvent& evt)
+{
+	switch (evt.GetKeyCode()) {
+	case WXK_DELETE:
+		DeleteExpense();
+	}
+		
+}
+
+void MainFrame::DeleteExpense()
+{
+	long index = listCtrl->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+
+	if (index == -1) {
+		wxMessageBox("No task is selected!");
+		return;
+	}
+
+	listCtrl->DeleteItem(index);
+}
+
+//Event handling when add button is pressed
+void MainFrame::OnAddButtonClicked(wxCommandEvent& evt)
+{
+	AddExpenseFromInput();
+}
+
+//Event handling when enter key is pressed after filling the fields
+void MainFrame::OnInputEnter(wxCommandEvent& evt)
+{
+	AddExpenseFromInput();
 }
 
 void MainFrame::OnClearButtonClicked(wxCommandEvent& evt)
@@ -137,3 +176,7 @@ void MainFrame::AddSavedExpense()
 			listCtrl->SetItem(index, 3, expense.date);
 	}
 }
+
+
+
+

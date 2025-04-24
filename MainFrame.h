@@ -15,6 +15,12 @@ private:
 	void OnClearButtonClicked(wxCommandEvent& evt);
 	void OnWindowClosed(wxCloseEvent& evt);
 	void AddSavedExpense();
+	void OnInputEnter(wxCommandEvent& evt);
+	void AddExpenseFromInput();
+	void OnKeyDown(wxKeyEvent& evt);
+	void DeleteExpense();
+	
+
 
 	wxPanel* panel;
 	wxStaticText* headLineText;
