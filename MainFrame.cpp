@@ -1,7 +1,37 @@
-#include "MainFrame.h"
+﻿#include "MainFrame.h"
 #include <wx/wx.h>
 #include <wx/listctrl.h>
 #include "Expense.h"
+#include <vector>
+#include <algorithm>
+
+
+// Helper to extract all expenses from the list control
+std::vector<Expense> GetExpensesFromListCtrl(wxListCtrl* listCtrl) {
+	std::vector<Expense> expenses;
+	for (int i = 0; i < listCtrl->GetItemCount(); ++i) {
+		Expense exp;
+		exp.description = listCtrl->GetItemText(i, 0);
+		exp.category = listCtrl->GetItemText(i, 1);
+		exp.amount = listCtrl->GetItemText(i, 2);
+		exp.date = listCtrl->GetItemText(i, 3);
+		expenses.push_back(exp);
+	}
+	return expenses;
+}
+
+// Helper to reload expenses into the list control
+void LoadExpensesToListCtrl(wxListCtrl* listCtrl, const std::vector<Expense>& expenses) {
+	listCtrl->DeleteAllItems();
+	for (const auto& exp : expenses) {
+		long idx = listCtrl->InsertItem(listCtrl->GetItemCount(), exp.description);
+		listCtrl->SetItem(idx, 1, exp.category);
+		listCtrl->SetItem(idx, 2, exp.amount);
+		listCtrl->SetItem(idx, 3, exp.date);
+	}
+}
+
+
 
 
 MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) {
@@ -18,7 +48,7 @@ void MainFrame::CreateControls()
 	panel->SetFont(bodyFont);
 
 	headLineText = new wxStaticText(panel, wxID_ANY, "Expense Tracker", wxPoint(0, 10), wxSize(800, -1),wxALIGN_CENTER_HORIZONTAL);
-	headLineText->SetBackgroundColour(*wxRED);
+	headLineText->SetBackgroundColour(wxColour(173, 216, 230)); 
 	headLineText->SetFont(headLineFont);
 
 	descText = new wxStaticText(panel, wxID_ANY, "Description", wxPoint(20, 60), wxSize(100,-1));
@@ -35,11 +65,11 @@ void MainFrame::CreateControls()
 
 	dateText = new wxStaticText(panel, wxID_ANY, "Date", wxPoint(340, 100), wxSize(100, -1));
 	
-	dateInput = new wxTextCtrl(panel, wxID_ANY, "", wxPoint(450, 100), wxSize(200, -1), wxTE_PROCESS_ENTER);
+	dateInput = new wxDatePickerCtrl(panel, wxID_ANY, wxDefaultDateTime, wxPoint(450, 100), wxSize(200, -1));
 
 	addButton = new wxButton(panel, wxID_ANY, "Add", wxPoint(680, 75), wxSize(100, 35));
 
-	listCtrl = new wxListCtrl(panel, wxID_ANY, wxPoint(20, 150), wxSize(760, 380),wxLC_REPORT|wxBORDER_SUNKEN);
+	listCtrl = new wxListCtrl(panel, wxID_ANY, wxPoint(20, 170), wxSize(760, 380),wxLC_REPORT|wxBORDER_SUNKEN);
 
 	listCtrl->InsertColumn(0, "Description", wxLIST_FORMAT_CENTER, 250);
 	listCtrl->InsertColumn(1, "Category", wxLIST_FORMAT_CENTER, 170);
@@ -47,6 +77,10 @@ void MainFrame::CreateControls()
 	listCtrl->InsertColumn(3, "Date", wxLIST_FORMAT_CENTER, 170);
 
 	clearButton = new wxButton(panel, wxID_ANY, "Clear", wxPoint(680, 540), wxSize(100, 35));
+
+	sortDateAscButton = new wxButton(panel, wxID_ANY, "Date ASC", wxPoint(550, 130), wxSize(100, 25));
+	sortDateDescButton = new wxButton(panel, wxID_ANY, "Date DSC", wxPoint(660, 130), wxSize(100, 25));
+
 
 }
 
@@ -61,6 +95,9 @@ void MainFrame::BindEvents()
 	dateInput->Bind(wxEVT_TEXT_ENTER, &MainFrame::OnInputEnter, this);
 	listCtrl->Bind(wxEVT_KEY_DOWN, & MainFrame::OnKeyDown, this);
 	this->Bind(wxEVT_CLOSE_WINDOW, &MainFrame::OnWindowClosed, this);
+	sortDateAscButton->Bind(wxEVT_BUTTON, &MainFrame::OnSortDateAsc, this);
+	sortDateDescButton->Bind(wxEVT_BUTTON, &MainFrame::OnSortDateDesc, this);
+
 }
 
 void MainFrame::AddExpenseFromInput()
@@ -68,7 +105,7 @@ void MainFrame::AddExpenseFromInput()
 	wxString desc = descInput->GetValue();
 	wxString cat = catInput->GetValue();
 	wxString amount = amountInput->GetValue();
-	wxString date = dateInput->GetValue();
+	wxString date = dateInput->GetValue().FormatISODate();
 
 	//Error handling for when all of the fields are not filled
 	if (desc.IsEmpty() || cat.IsEmpty() || amount.IsEmpty() || date.IsEmpty()) {
@@ -87,7 +124,7 @@ void MainFrame::AddExpenseFromInput()
 	descInput->Clear();
 	catInput->Clear();
 	amountInput->Clear();
-	dateInput->Clear();
+	//dateInput->Clear();
 }
 
 //Deleting selected expense detail when delete key is pressed
@@ -180,3 +217,18 @@ void MainFrame::AddSavedExpense()
 
 
 
+void MainFrame::OnSortDateAsc(wxCommandEvent& evt) {
+	auto expenses = GetExpensesFromListCtrl(listCtrl);
+	std::sort(expenses.begin(), expenses.end(), [](const Expense& a, const Expense& b) {
+		return a.date < b.date;
+		});
+	LoadExpensesToListCtrl(listCtrl, expenses);
+}
+
+void MainFrame::OnSortDateDesc(wxCommandEvent& evt) {
+	auto expenses = GetExpensesFromListCtrl(listCtrl);
+	std::sort(expenses.begin(), expenses.end(), [](const Expense& a, const Expense& b) {
+		return a.date > b.date;
+		});
+	LoadExpensesToListCtrl(listCtrl, expenses);
+}

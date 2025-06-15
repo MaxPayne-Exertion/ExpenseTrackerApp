@@ -2,6 +2,8 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <wx/wx.h>
 #include <wx/listctrl.h>
+#include <wx/datectrl.h>
+#include <wx/dateevt.h>
 
 class MainFrame : public wxFrame
 {
@@ -19,9 +21,11 @@ private:
 	void AddExpenseFromInput();
 	void OnKeyDown(wxKeyEvent& evt);
 	void DeleteExpense();
+	void OnSortDateAsc(wxCommandEvent& evt);
+	void OnSortDateDesc(wxCommandEvent& evt);
 	
 
-
+	
 	wxPanel* panel;
 	wxStaticText* headLineText;
 	wxStaticText* descText;
@@ -32,9 +36,11 @@ private:
 	wxTextCtrl* descInput;
 	wxTextCtrl* catInput;
 	wxTextCtrl* amountInput;
-	wxTextCtrl* dateInput;
+	wxDatePickerCtrl* dateInput;
 	wxButton* addButton;
 	wxButton* clearButton;
 	wxListCtrl* listCtrl;
+	wxButton* sortDateAscButton;
+	wxButton* sortDateDescButton;
 };
 
