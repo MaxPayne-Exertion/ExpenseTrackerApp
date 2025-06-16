@@ -57,7 +57,7 @@ void MainFrame::CreateControls()
 
 	catText = new wxStaticText(panel, wxID_ANY, "Category", wxPoint(340, 60), wxSize(100, -1));
 	
-	catInput = new wxTextCtrl(panel, wxID_ANY, "", wxPoint(450, 60), wxSize(200, -1), wxTE_PROCESS_ENTER);
+	catInput = new wxComboBox(panel, wxID_ANY, "", wxPoint(450, 60), wxSize(200, -1), 0, nullptr, wxCB_DROPDOWN);
 
 	amountText = new wxStaticText(panel, wxID_ANY, "Amount", wxPoint(20, 100), wxSize(100, -1));
 	
@@ -78,8 +78,14 @@ void MainFrame::CreateControls()
 
 	clearButton = new wxButton(panel, wxID_ANY, "Clear", wxPoint(680, 540), wxSize(100, 35));
 
-	sortDateAscButton = new wxButton(panel, wxID_ANY, "Date ASC", wxPoint(550, 130), wxSize(100, 25));
-	sortDateDescButton = new wxButton(panel, wxID_ANY, "Date DSC", wxPoint(660, 130), wxSize(100, 25));
+	
+	// Place the settings button on top of the blue accent, right-aligned
+settingsButton = new wxButton(panel, wxID_ANY, "⚙", wxPoint(760, 10), wxSize(40, 40));
+settingsButton->SetFont(wxFontInfo(18).Bold());
+settingsButton->SetBackgroundColour(wxColour(173, 216, 230)); // Match the blue accent
+settingsButton->SetForegroundColour(*wxBLACK);
+settingsButton->SetToolTip("Settings");
+
 
 
 }
@@ -95,8 +101,15 @@ void MainFrame::BindEvents()
 	dateInput->Bind(wxEVT_TEXT_ENTER, &MainFrame::OnInputEnter, this);
 	listCtrl->Bind(wxEVT_KEY_DOWN, & MainFrame::OnKeyDown, this);
 	this->Bind(wxEVT_CLOSE_WINDOW, &MainFrame::OnWindowClosed, this);
-	sortDateAscButton->Bind(wxEVT_BUTTON, &MainFrame::OnSortDateAsc, this);
-	sortDateDescButton->Bind(wxEVT_BUTTON, &MainFrame::OnSortDateDesc, this);
+	listCtrl->Bind(wxEVT_LIST_COL_CLICK, &MainFrame::OnListColClick, this);
+	settingsButton->Bind(wxEVT_BUTTON, &MainFrame::OnSettingsButtonClicked, this);
+
+
+	
+
+	
+
+
 
 }
 
@@ -104,6 +117,11 @@ void MainFrame::AddExpenseFromInput()
 {
 	wxString desc = descInput->GetValue();
 	wxString cat = catInput->GetValue();
+	// Add new category to the combo box if not already present
+	if (!cat.IsEmpty() && catInput->FindString(cat) == wxNOT_FOUND) {
+		catInput->Append(cat);
+		categoryList.push_back(cat);
+	}
 	wxString amount = amountInput->GetValue();
 	wxString date = dateInput->GetValue().FormatISODate();
 
@@ -122,7 +140,7 @@ void MainFrame::AddExpenseFromInput()
 
 	//Clearing the input field after the values of the input fields have been listed
 	descInput->Clear();
-	catInput->Clear();
+	catInput->SetValue(""); // Only clear the text, not the items!
 	amountInput->Clear();
 	//dateInput->Clear();
 }
@@ -203,32 +221,44 @@ void MainFrame::OnWindowClosed(wxCloseEvent& evt)
 //Adding saved expenses to the list from the text file to the list after the app has been re-opened
 void MainFrame::AddSavedExpense()
 {
-	
+		catInput->Clear();
+		categoryList.clear();
 		std::vector<Expense> expenses = LoadExpenseFromFile("expense.txt");
+		
 		for (const Expense& expense : expenses) {
 			int index = listCtrl->InsertItem(listCtrl->GetItemCount(), expense.description);
 			
 			listCtrl->SetItem(index, 1, expense.category);
 			listCtrl->SetItem(index, 2, expense.amount);
 			listCtrl->SetItem(index, 3, expense.date);
+
+			// Add category to the combo box if it doesn't already exist
+			if (!expense.category.empty() && catInput->FindString(expense.category) == wxNOT_FOUND) {
+				catInput->Append(expense.category);
+				categoryList.push_back(expense.category);
+			}
 	}
 }
 
-
-
-
-void MainFrame::OnSortDateAsc(wxCommandEvent& evt) {
-	auto expenses = GetExpensesFromListCtrl(listCtrl);
-	std::sort(expenses.begin(), expenses.end(), [](const Expense& a, const Expense& b) {
-		return a.date < b.date;
-		});
-	LoadExpensesToListCtrl(listCtrl, expenses);
+void MainFrame::OnListColClick(wxListEvent& event) {
+	int col = event.GetColumn();
+	if (col == 3) { // Date column
+		auto expenses = GetExpensesFromListCtrl(listCtrl);
+		if (dateSortAscending) {
+			std::sort(expenses.begin(), expenses.end(), [](const Expense& a, const Expense& b) {
+				return a.date < b.date;
+				});
+		}
+		else {
+			std::sort(expenses.begin(), expenses.end(), [](const Expense& a, const Expense& b) {
+				return a.date > b.date;
+				});
+		}
+		dateSortAscending = !dateSortAscending; // Toggle for next click
+		LoadExpensesToListCtrl(listCtrl, expenses);
+	}
 }
 
-void MainFrame::OnSortDateDesc(wxCommandEvent& evt) {
-	auto expenses = GetExpensesFromListCtrl(listCtrl);
-	std::sort(expenses.begin(), expenses.end(), [](const Expense& a, const Expense& b) {
-		return a.date > b.date;
-		});
-	LoadExpensesToListCtrl(listCtrl, expenses);
+void MainFrame::OnSettingsButtonClicked(wxCommandEvent& evt) {
+	// Placeholder for settings panel, does nothing and makes no sound
 }

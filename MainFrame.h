@@ -21,8 +21,12 @@ private:
 	void AddExpenseFromInput();
 	void OnKeyDown(wxKeyEvent& evt);
 	void DeleteExpense();
-	void OnSortDateAsc(wxCommandEvent& evt);
-	void OnSortDateDesc(wxCommandEvent& evt);
+	bool dateSortAscending = true;
+	void OnListColClick(wxListEvent& event);
+	void OnSettingsButtonClicked(wxCommandEvent& evt);
+
+	
+	
 	
 
 	
@@ -34,13 +38,13 @@ private:
 	wxStaticText* dateText;
 
 	wxTextCtrl* descInput;
-	wxTextCtrl* catInput;
 	wxTextCtrl* amountInput;
+	wxComboBox* catInput;
+	std::vector<wxString> categoryList; // To keep track of unique categories
 	wxDatePickerCtrl* dateInput;
 	wxButton* addButton;
 	wxButton* clearButton;
+	wxButton* settingsButton;
 	wxListCtrl* listCtrl;
-	wxButton* sortDateAscButton;
-	wxButton* sortDateDescButton;
 };
 
