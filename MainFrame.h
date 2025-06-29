@@ -21,11 +21,17 @@ private:
 	void AddExpenseFromInput();
 	void OnKeyDown(wxKeyEvent& evt);
 	void DeleteExpense();
+	bool categorySortAscending = true;
+	bool amountSortAscending = true;
 	bool dateSortAscending = true;
 	void OnListColClick(wxListEvent& event);
 	void OnSettingsButtonClicked(wxCommandEvent& evt);
+	void OnPlotButtonClicked(wxCommandEvent& evt);
 
-	
+	//darkmode
+	void EnableDarkMode();
+	bool isDarkMode = false;
+	void EnableLightMode();
 	
 	
 
@@ -46,5 +52,6 @@ private:
 	wxButton* clearButton;
 	wxButton* settingsButton;
 	wxListCtrl* listCtrl;
+	wxButton* plotButton;
 };
 

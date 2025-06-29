@@ -4,6 +4,10 @@
 #include "Expense.h"
 #include <vector>
 #include <algorithm>
+#include <fstream>
+#include <cstdlib>
+#include <map>
+
 
 
 // Helper to extract all expenses from the list control
@@ -76,15 +80,17 @@ void MainFrame::CreateControls()
 	listCtrl->InsertColumn(2, "Amount", wxLIST_FORMAT_CENTER, 170);
 	listCtrl->InsertColumn(3, "Date", wxLIST_FORMAT_CENTER, 170);
 
-	clearButton = new wxButton(panel, wxID_ANY, "Clear", wxPoint(680, 540), wxSize(100, 35));
+	clearButton = new wxButton(panel, wxID_ANY, "Clear", wxPoint(680, 550), wxSize(100, 35));
 
 	
-	// Place the settings button on top of the blue accent, right-aligned
-settingsButton = new wxButton(panel, wxID_ANY, "⚙", wxPoint(760, 10), wxSize(40, 40));
-settingsButton->SetFont(wxFontInfo(18).Bold());
-settingsButton->SetBackgroundColour(wxColour(173, 216, 230)); // Match the blue accent
-settingsButton->SetForegroundColour(*wxBLACK);
-settingsButton->SetToolTip("Settings");
+	
+	settingsButton = new wxButton(panel, wxID_ANY, "X", wxPoint(60, 550), wxSize(40, 40));
+	settingsButton->SetFont(wxFontInfo(18).Bold());
+	settingsButton->SetBackgroundColour(wxColour(173, 216, 230)); 
+	settingsButton->SetForegroundColour(*wxBLACK);
+	settingsButton->SetToolTip("Settings");
+
+	plotButton = new wxButton(panel, wxID_ANY, "Plot", wxPoint(560, 550), wxSize(100, 35));
 
 
 
@@ -103,6 +109,7 @@ void MainFrame::BindEvents()
 	this->Bind(wxEVT_CLOSE_WINDOW, &MainFrame::OnWindowClosed, this);
 	listCtrl->Bind(wxEVT_LIST_COL_CLICK, &MainFrame::OnListColClick, this);
 	settingsButton->Bind(wxEVT_BUTTON, &MainFrame::OnSettingsButtonClicked, this);
+	plotButton->Bind(wxEVT_BUTTON, &MainFrame::OnPlotButtonClicked, this);
 
 
 	
@@ -242,8 +249,47 @@ void MainFrame::AddSavedExpense()
 
 void MainFrame::OnListColClick(wxListEvent& event) {
 	int col = event.GetColumn();
-	if (col == 3) { // Date column
-		auto expenses = GetExpensesFromListCtrl(listCtrl);
+	auto expenses = GetExpensesFromListCtrl(listCtrl);
+
+	if (col == 1) { // Category column
+		if (categorySortAscending) {
+			std::sort(expenses.begin(), expenses.end(), [](const Expense& a, const Expense& b) {
+				return a.category < b.category;
+				});
+		}
+		else {
+			std::sort(expenses.begin(), expenses.end(), [](const Expense& a, const Expense& b) {
+				return a.category > b.category;
+				});
+		}
+		categorySortAscending = !categorySortAscending;
+		LoadExpensesToListCtrl(listCtrl, expenses);
+	}
+	else if (col == 2) { // Amount column
+		if (amountSortAscending) {
+			std::sort(expenses.begin(), expenses.end(), [](const Expense& a, const Expense& b) {
+				try {
+					return std::stod(a.amount) < std::stod(b.amount);
+				}
+				catch (...) {
+					return a.amount < b.amount; // fallback to string compare
+				}
+				});
+		}
+		else {
+			std::sort(expenses.begin(), expenses.end(), [](const Expense& a, const Expense& b) {
+				try {
+					return std::stod(a.amount) > std::stod(b.amount);
+				}
+				catch (...) {
+					return a.amount > b.amount; // fallback to string compare
+				}
+				});
+		}
+		amountSortAscending = !amountSortAscending;
+		LoadExpensesToListCtrl(listCtrl, expenses);
+	}
+	else if (col == 3) { // Date column
 		if (dateSortAscending) {
 			std::sort(expenses.begin(), expenses.end(), [](const Expense& a, const Expense& b) {
 				return a.date < b.date;
@@ -254,11 +300,107 @@ void MainFrame::OnListColClick(wxListEvent& event) {
 				return a.date > b.date;
 				});
 		}
-		dateSortAscending = !dateSortAscending; // Toggle for next click
+		dateSortAscending = !dateSortAscending;
 		LoadExpensesToListCtrl(listCtrl, expenses);
 	}
 }
 
+
 void MainFrame::OnSettingsButtonClicked(wxCommandEvent& evt) {
-	// Placeholder for settings panel, does nothing and makes no sound
+	
+	isDarkMode = !isDarkMode;
+	if (isDarkMode)
+		EnableDarkMode();
+	else
+		EnableLightMode(); 
+	panel->Refresh();
+	
+
+}
+
+
+void MainFrame::OnPlotButtonClicked(wxCommandEvent& evt)
+{
+	//plotting
+}
+
+
+
+
+//dark mode
+void MainFrame::EnableDarkMode() {
+	wxColour bgColor(30, 30, 30);
+	wxColour fgColor(220, 220, 220);
+	wxColour accentColor(45, 45, 48);
+
+	panel->SetBackgroundColour(bgColor);
+
+	headLineText->SetBackgroundColour(accentColor);
+	headLineText->SetForegroundColour(fgColor);
+
+	descText->SetForegroundColour(fgColor);
+	catText->SetForegroundColour(fgColor);
+	amountText->SetForegroundColour(fgColor);
+	dateText->SetForegroundColour(fgColor);
+
+	descInput->SetBackgroundColour(accentColor);
+	descInput->SetForegroundColour(fgColor);
+	catInput->SetBackgroundColour(accentColor);
+	catInput->SetForegroundColour(fgColor);
+	amountInput->SetBackgroundColour(accentColor);
+	amountInput->SetForegroundColour(fgColor);
+	dateInput->SetBackgroundColour(accentColor);
+	dateInput->SetForegroundColour(fgColor);
+
+	addButton->SetBackgroundColour(accentColor);
+	addButton->SetForegroundColour(fgColor);
+	clearButton->SetBackgroundColour(accentColor);
+	clearButton->SetForegroundColour(fgColor);
+	plotButton->SetBackgroundColour(accentColor);
+	plotButton->SetForegroundColour(fgColor);
+	settingsButton->SetBackgroundColour(accentColor);
+	settingsButton->SetForegroundColour(fgColor);
+
+	listCtrl->SetBackgroundColour(bgColor);
+	listCtrl->SetForegroundColour(fgColor);
+
+	panel->Refresh();
+}
+void MainFrame::EnableLightMode() {
+	wxColour panelBg = *wxWHITE;
+	wxColour textFg = *wxBLACK;
+	wxColour accentBg(173, 216, 230);
+
+	panel->SetBackgroundColour(panelBg);
+
+	headLineText->SetBackgroundColour(accentBg);
+	headLineText->SetForegroundColour(textFg);
+
+	descText->SetForegroundColour(textFg);
+	catText->SetForegroundColour(textFg);
+	amountText->SetForegroundColour(textFg);
+	dateText->SetForegroundColour(textFg);
+
+	descInput->SetBackgroundColour(*wxWHITE);
+	descInput->SetForegroundColour(textFg);
+	catInput->SetBackgroundColour(*wxWHITE);
+	catInput->SetForegroundColour(textFg);
+	amountInput->SetBackgroundColour(*wxWHITE);
+	amountInput->SetForegroundColour(textFg);
+	dateInput->SetBackgroundColour(*wxWHITE);
+	dateInput->SetForegroundColour(textFg);
+
+	addButton->SetBackgroundColour(*wxLIGHT_GREY);
+	addButton->SetForegroundColour(textFg);
+	clearButton->SetBackgroundColour(*wxLIGHT_GREY);
+	clearButton->SetForegroundColour(textFg);
+	plotButton->SetBackgroundColour(*wxLIGHT_GREY);
+	plotButton->SetForegroundColour(textFg);
+	settingsButton->SetBackgroundColour(accentBg);
+	settingsButton->SetForegroundColour(textFg);
+
+	listCtrl->SetBackgroundColour(*wxWHITE);
+	listCtrl->SetForegroundColour(textFg);
+
+	panel->Refresh();
 }
