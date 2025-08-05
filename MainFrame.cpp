@@ -90,8 +90,11 @@ void MainFrame::CreateControls()
 	settingsButton->SetForegroundColour(*wxBLACK);
 	settingsButton->SetToolTip("Settings");
 
-	plotButton = new wxButton(panel, wxID_ANY, "Plot", wxPoint(560, 550), wxSize(100, 35));
+	viewTotalsButton = new wxButton(panel, wxID_ANY, "View Monthly Category Totals");
+	viewTotalsButton->SetPosition(wxPoint(175, 550));
+	viewTotalsButton->SetSize(wxSize(250, 35));
 
+	
 
 
 }
@@ -109,7 +112,9 @@ void MainFrame::BindEvents()
 	this->Bind(wxEVT_CLOSE_WINDOW, &MainFrame::OnWindowClosed, this);
 	listCtrl->Bind(wxEVT_LIST_COL_CLICK, &MainFrame::OnListColClick, this);
 	settingsButton->Bind(wxEVT_BUTTON, &MainFrame::OnSettingsButtonClicked, this);
-	plotButton->Bind(wxEVT_BUTTON, &MainFrame::OnPlotButtonClicked, this);
+	
+
+	viewTotalsButton->Bind(wxEVT_BUTTON, &MainFrame::OnViewTotalsButtonClicked, this);
 
 
 	
@@ -403,4 +408,50 @@ void MainFrame::EnableLightMode() {
 	listCtrl->SetForegroundColour(textFg);
 
 	panel->Refresh();
+}
+
+
+class TotalsDialog : public wxDialog {
+public:
+	TotalsDialog(wxWindow* parent, const std::map<std::string, std::map<std::string, double>>& data)
+		: wxDialog(parent, wxID_ANY, "Monthly Category Totals",
+			wxDefaultPosition, wxSize(900, 600),
+			wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+	{
+		wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
+		wxTextCtrl* text = new wxTextCtrl(this, wxID_ANY, "", wxDefaultPosition, wxDefaultSize,
+			wxTE_MULTILINE | wxTE_READONLY | wxTE_DONTWRAP);
+
+		wxString output;
+		for (const auto& [month, catMap] : data) {
+			output += "Month: " + month + "\n";
+			for (const auto& [cat, total] : catMap) {
+				output += "  " + cat + ": " + wxString::Format("%.2f", total) + "\n";
+			}
+			output += "\n";
+		}
+		text->SetValue(output);
+		sizer->Add(text, 1, wxEXPAND | wxALL, 10);
+		SetSizer(sizer);
+		SetMinSize(wxSize(600, 400)); // Optional: set a minimum size
+		Layout();
+		Centre();
+	}
+};
+
+
+void MainFrame::OnViewTotalsButtonClicked(wxCommandEvent& evt)
+{
+	auto expenses = GetExpensesFromListCtrl(listCtrl);
+	// Map: month -> category -> total
+	std::map<std::string, std::map<std::string, double>> totals;
+	for (const auto& exp : expenses) {
+		std::string month = exp.date.substr(0, 7);
+		double amt = 0.0;
+		try { amt = std::stod(exp.amount); }
+		catch (...) { continue; }
+		totals[month][exp.category] += amt;
+	}
+	TotalsDialog dlg(this, totals);
+	dlg.ShowModal();
 }

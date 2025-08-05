@@ -34,8 +34,10 @@ private:
 	void EnableLightMode();
 	
 	
+	void OnViewTotalsButtonClicked(wxCommandEvent& evt);
 
-	
+
+	wxButton* viewTotalsButton;
 	wxPanel* panel;
 	wxStaticText* headLineText;
 	wxStaticText* descText;
